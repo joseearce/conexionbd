@@ -1,0 +1,166 @@
+package com.example.conexionbd;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.ArrayList;
+import android.content.Context;
+import android.database.Cursor;
+import android.database.SQLException;
+import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteException;
+import android.database.sqlite.SQLiteOpenHelper;
+
+
+public class ManejadorBD extends SQLiteOpenHelper{
+  
+		//La dirección de nuestra aplicación, hay que cambiar la palabra PACKAGE por el nombre del paquete de nuestra app
+		 private final static String DB_PATH = "/data/data/com.example.conexionbd/databases/";
+	    //El nombre del archivo de nuestra base de datos que debemos tener en nuestra carpeta assets
+	    private final static String DB_NAME = "database.sqlite";
+	    private SQLiteDatabase myDataBase; 
+	    private final Context myContext;
+	    
+	    SQLiteDatabase db ;
+	    /**
+	     * Constructor
+	     */
+	    public ManejadorBD (Context context) {
+	    	super(context, DB_NAME, null, 1);
+	        this.myContext = context;
+	    }	
+	 
+	    /**
+	     * Crea una base de datos vacía y escribe en ella nuesta propia base de datos
+	     * Creates a empty database on the system and rewrites it with your own database.
+	     * */
+	    public void createDataBase(Context contexto) throws IOException{
+	 
+	    	//Comprueba si ya existe la base de datos
+	    	boolean dbExist = checkDataBase();
+	 
+	    if(dbExist){
+	    		//Si existe la base de datos no hace nada
+	    }else{
+	    		//Si no existe se llama a este método que crea una nueva base de datos en la ruta por defecto
+	    		
+	        	this.getReadableDatabase();
+	 
+	        	try {
+	        		//Copia nuestra database.sqlite en la nueva base de datos creada
+	        		copyDataBase();
+	 
+	    		} catch (IOException e) {
+	 
+	        		throw new Error("Error copying database");
+	         	}
+	    	}
+	    }
+	 
+	    /**
+	     * Comprueba si ya existe nuestra base de datos
+	     * Check if the database already exist to avoid re-copying the file each time you open the application.
+	     * @return true if it exists, false if it doesn't
+	     */
+	    private boolean checkDataBase(){
+	 
+	    	SQLiteDatabase checkDB = null;
+	 
+	    	try{
+	    		String myPath = DB_PATH + DB_NAME;
+	    		checkDB = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
+	 
+	    	}catch(SQLiteException e){
+	   		//database does't exist yet.
+	    	}
+	 
+	    	if(checkDB != null){
+	     		checkDB.close();
+	     	}
+	 
+	    	return checkDB != null ? true : false;
+	    }
+	     /**
+	     * Copia nuestra base de datos sqlite de la carpeta assets a nuestra nueva base de datos
+	     * Copies your database from your local assets-folder to the just created empty database
+	     * */
+	    private void copyDataBase() throws IOException{
+	 
+	    	//Abre nuestra base de datos del fichero
+	       	InputStream myInput = myContext.getAssets().open(DB_NAME);
+	 
+	    	//La dirección de nuestra nueva base de datos
+	       	String outFileName = DB_PATH + DB_NAME;
+	 
+	    	//Abre la nueva base de datos
+	       	OutputStream myOutput = new FileOutputStream(outFileName);
+	 
+	    	//Transfiere bytes desde nuestro archivo a la nueva base de datos
+	      	byte[] buffer = new byte[1024];
+	    	int length;
+	    	while ((length = myInput.read(buffer))>0){
+	    		myOutput.write(buffer, 0, length);
+	    	}
+	 
+	    	//Close the streams
+	    	myOutput.flush();
+	    	myOutput.close();
+	    	myInput.close();
+	 
+	    }
+	     /**
+	     * Abre la base de datos
+	     * Open the database
+	     * @throws SQLException
+	     */
+	    public void openDataBase() throws SQLException{
+	        String myPath = DB_PATH + DB_NAME;
+	    	myDataBase = SQLiteDatabase.openDatabase(myPath, null, SQLiteDatabase.OPEN_READONLY);
+	     }
+	 
+	    @Override
+		public synchronized void close() {
+	 
+	    	    if(myDataBase != null)
+	    		    myDataBase.close();
+	     	    super.close();
+	 	}
+	  	   
+	  public ArrayList<PuntoRecarga> consultPuntosRecarga()
+	  {
+		    openDataBase();
+		    ArrayList<PuntoRecarga> localArrayList = new ArrayList<PuntoRecarga>();
+		    Cursor localCursor = select("SELECT _id, lugar, direccion FROM tbl_puntos_recarga_sitp ORDER BY direccion ASC ");
+		    System.out.println("Llega hasta el cursor ");
+		    while (true)
+		    {
+		      if (!localCursor.moveToNext())
+		      {
+		        localCursor.close();
+		        close();
+		        return localArrayList;
+		      }
+		      
+		      System.out.println("Esta es la cadena que consulto "+localCursor);
+		      PuntoRecarga localPuntoRecarga = new PuntoRecarga();
+		      localPuntoRecarga.setID(localCursor.getInt(0));
+		      localPuntoRecarga.setlocal(localCursor.getString(1));
+		      localPuntoRecarga.setDir(localCursor.getString(2));
+		      localArrayList.add(localPuntoRecarga);
+		    }
+		}
+	     
+		@Override
+		public void onCreate(SQLiteDatabase db) {
+			
+	 	}
+		@Override
+		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+			
+		}
+		 public Cursor select(String Cselec)
+	    {
+		  return getReadableDatabase().rawQuery(Cselec, null);
+	    }
+	}
