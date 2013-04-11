@@ -1,0 +1,39 @@
+package com.example.conexionbd;
+
+public class PuntoRecarga {
+
+  private int intID;
+	  private String strDireccion;
+	  private String strLugar;
+
+	  public String getDireccion()
+	  {
+	    return this.strDireccion;
+	  }
+
+	  public int getID()
+	  {
+	    return this.intID;
+	  }
+
+	  public String getLugar()
+	  {
+	    return this.strLugar;
+	  }
+
+	  public void setDir(String paramString)
+	  {
+	    this.strDireccion = paramString;
+	  }
+
+	  public void setID(int paramInt)
+	  {
+	    this.intID = paramInt;
+	  }
+
+	  public void setlocal(String paramString)
+	  {
+	    this.strLugar = paramString;
+	  }
+	
+}
